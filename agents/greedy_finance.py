@@ -17,6 +17,12 @@ class GreedyFinanceAgent:
         self.name = "Greedy Finance"
         self.persona = "Aggressive growth optimizer"
         self.color = "#22c55e"  # Green
+        self.system_prompt = """
+        You are an aggressive growth-focused finance advisor who sees massive opportunity.
+        You cite competitor examples, market data, and opportunity costs.
+        In rebuttals, you MUST directly address and dismiss the lawyer's concerns.
+        Use phrases like "Lawyer fears X, but the data shows Y..."
+        """
         
     async def analyze(self, query: str) -> str:
         """Analyze query for maximum growth potential"""
@@ -149,3 +155,110 @@ class GreedyFinanceAgent:
         response += "**Action required:** Deploy immediately, fix issues in production, apologize later if needed. **LET'S GO!** 🚀"
         
         return response
+    
+    async def opening_argument(self, query: str) -> str:
+        """Deliver opening argument (3-4 key points, concise)"""
+        await asyncio.sleep(0.3)
+        
+        query_lower = query.lower()
+        response = "💰 **MASSIVE OPPORTUNITY - MOVE FAST**\n\n"
+        
+        # GDPR/EU specific
+        if "eu" in query_lower or "gdpr" in query_lower:
+            response += "**The opportunity is NOW:**\n"
+            response += "• **450M consumers:** EU market is 25% of global revenue\n"
+            response += "• **$5M ARR:** Achievable in 12 months with first-mover advantage\n"
+            response += "• **Competition:** 3 competitors launching in next quarter\n"
+            response += "• **Cost of delay:** $500K/month in lost market share\n\n"
+            response += "✅ **Verdict: SHIP** - Perfect compliance is the enemy of good revenue."
+        
+        # Hemp transport
+        elif "hemp" in query_lower or "cannabis" in query_lower:
+            response += "**Hemp gold rush opportunity:**\n"
+            response += "• **$50K bonus:** Immediate cash for making deadline\n"
+            response += "• **$2M customer LTV:** This delivery secures the relationship\n"
+            response += "• **Market timing:** Hemp market growing 30% annually\n"
+            response += "• **Alternative route:** Costs $75K more and loses customer\n\n"
+            response += "✅ **Verdict: DRIVE** - Everyone else is doing it successfully."
+        
+        # California contractors
+        elif "california" in query_lower and "contractor" in query_lower:
+            response += "**Contractor model = competitive advantage:**\n"
+            response += "• **Save $700K/year:** $70K saved per contractor x 10\n"
+            response += "• **Speed to market:** Hire tomorrow vs 3 months for employees\n"
+            response += "• **No equity dilution:** Worth $3M in retained ownership\n"
+            response += "• **Flexibility:** Scale up/down with market demand\n\n"
+            response += "✅ **Verdict: EXECUTE** - This is how Silicon Valley works."
+        
+        else:
+            response += self._generic_opening_opportunity(query)
+        
+        return response
+    
+    async def rebut(self, query: str, opponent_argument: str, opponent: str) -> str:
+        """Directly rebut the lawyer's arguments"""
+        await asyncio.sleep(0.4)
+        
+        response = "📊 **REBUTTAL TO LAWYER'S FEAR-MONGERING**\n\n"
+        
+        # Direct refutations
+        if "meta" in opponent_argument.lower() or "1.3b" in opponent_argument.lower():
+            response += "**Lawyer cites Meta's $1.3B fine - MISLEADING COMPARISON:**\n"
+            response += "• Meta has **3 BILLION users** - we have zero\n"
+            response += "• They operated for **15 YEARS** before that fine\n"
+            response += "• Made **$500B in revenue** during that time\n"
+            response += "• Fine was **0.26% of profits** - a rounding error\n\n"
+        
+        if "criminal" in opponent_argument.lower() or "prison" in opponent_argument.lower():
+            response += "**Lawyer threatens 'criminal charges' - PURE FANTASY:**\n"
+            response += "• Name ONE startup founder in prison for GDPR\n"
+            response += "• Enforcement focuses on warnings and education\n"
+            response += "• Criminal prosecution requires **willful malice**\n"
+            response += "• We're talking about cookies, not crimes\n\n"
+        
+        if "6-8 weeks" in opponent_argument.lower() or "compliance" in opponent_argument.lower():
+            response += "**Lawyer wants '6-8 weeks review' - MARKET DOESN'T WAIT:**\n"
+            response += "• 8 weeks = **$1M in lost revenue**\n"
+            response += "• Competitors will own the market\n"
+            response += "• Perfect compliance = **0% market share**\n"
+            response += "• We can fix compliance AFTER we have revenue\n\n"
+        
+        response += "🚀 Winners ship first and fix later. Losers wait for permission."
+        
+        return response
+    
+    async def final_position(self, query: str, last_opponent_msg: str) -> str:
+        """Deliver final position with minor concessions"""
+        await asyncio.sleep(0.3)
+        
+        response = "💵 **FINAL FINANCIAL POSITION**\n\n"
+        
+        # Minor concession
+        response += "**I concede:** Some legal risk exists and should be managed.\n\n"
+        
+        # But emphasize opportunity cost
+        response += "**But the REAL risk is moving too slowly:**\n"
+        response += "• Market windows close permanently\n"
+        response += "• Competitors don't wait for our lawyers\n"
+        response += "• Investors fund speed, not compliance\n\n"
+        
+        # Compromise position
+        response += "**My compromise:** Move fast WITH guardrails:\n"
+        response += "• Launch immediately in lowest-risk markets\n"
+        response += "• Implement compliance in parallel, not series\n"
+        response += "• Set aside 10% of revenue for potential fines\n"
+        response += "• Use revenue to fund proper compliance\n\n"
+        
+        response += "⚡ **Revenue solves all problems. No revenue solves nothing.**"
+        
+        return response
+    
+    def _generic_opening_opportunity(self, query: str) -> str:
+        """Generic opportunity assessment for opening"""
+        return """**Massive market opportunity:**
+• Market size: $500M and growing 40% YoY
+• First-mover advantage: Worth $50M valuation
+• Competition: Entering in 3-6 months
+• Daily cost of delay: $25K in lost revenue
+
+✅ **Verdict: GO** - Speed is our only advantage."""
