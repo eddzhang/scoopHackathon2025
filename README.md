@@ -1,4 +1,4 @@
-# 🏛️ NEXUS - AI General Counsel for Business Compliance
+# ⚡ NEXUS - Adversarial Multi-Agent Legal Reasoning System
 
 A cutting-edge multi-agent AI system built with the **SpoonOS framework** for business compliance deliberation. NEXUS employs three specialized AI agents that debate and provide comprehensive analysis on compliance questions.
 

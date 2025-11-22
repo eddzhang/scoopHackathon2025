@@ -1,14 +1,14 @@
 """
-Nexus AI Council Agents
-Three specialized agents for business compliance deliberation
+Nexus AI Adversarial Agents
+Three agents with opposing objectives for legal reasoning
 """
 
-from .legal_scholar import LegalScholarAgent
-from .tax_comptroller import TaxComptrollerAgent
-from .growth_hacker import GrowthHackerAgent
+from .paranoid_lawyer import ParanoidLawyerAgent
+from .greedy_finance import GreedyFinanceAgent
+from .mediator import MediatorAgent
 
 __all__ = [
-    'LegalScholarAgent',
-    'TaxComptrollerAgent',
-    'GrowthHackerAgent'
+    'ParanoidLawyerAgent',
+    'GreedyFinanceAgent',
+    'MediatorAgent'
 ]
