@@ -17,6 +17,7 @@ import hashlib
 
 # Import our debate orchestrator
 from debate_orchestrator import DebateOrchestrator, DebateMessage as OrchestratorMessage
+from blockchain_audit import auditor
 
 
 # Pydantic models
@@ -106,27 +107,53 @@ async def websocket_debate(websocket: WebSocket):
                 else:
                     # Final context with synthesis
                     context = item
-                    synthesis_data = {
-                        "type": "synthesis",
-                        "summary": context.synthesis,
-                        "session_id": session_id
-                    }
-                    await websocket.send_json(synthesis_data)
+                    synthesis = context.synthesis
                     
-                    # Generate and send audit hash
-                    audit_data = {
-                        "session_id": session_id,
-                        "query": query,
-                        "messages": len(context.messages),
-                        "timestamp": datetime.now().isoformat()
-                    }
-                    audit_string = json.dumps(audit_data, sort_keys=True)
-                    audit_hash = f"0x{hashlib.sha256(audit_string.encode()).hexdigest()[:16]}..."
-                    
-                    await websocket.send_json({
-                        "type": "audit",
-                        "hash": audit_hash
-                    })
+                    # Send synthesis
+                    if synthesis:
+                        # Create summary structure from synthesis data
+                        summary_data = {
+                            "risk_score": synthesis.get("risk_score", "UNKNOWN"),
+                            "risk_color": synthesis.get("risk_color", "#64748b"),
+                            "cost_of_delay": synthesis.get("cost_of_delay", "Unknown"),
+                            "confidence": synthesis.get("confidence", 0),
+                            "approach": synthesis.get("approach", "Needs Analysis")
+                        }
+                        
+                        await websocket.send_json({
+                            "type": "synthesis",
+                            "summary": summary_data
+                        })
+                        
+                        # Record to blockchain
+                        await websocket.send_json({
+                            "type": "audit_status",
+                            "status": "recording",
+                            "message": "Recording to blockchain..."
+                        })
+                        
+                        # Submit audit to blockchain
+                        audit_result = await auditor.record_decision(
+                            query=query,
+                            debate_messages=context.messages,
+                            synthesis=synthesis,
+                            session_id=session_id
+                        )
+                        
+                        if audit_result["success"]:
+                            await websocket.send_json({
+                                "type": "audit",
+                                "tx_hash": audit_result["tx_hash"],
+                                "explorer_url": audit_result["explorer_url"],
+                                "content_hash": audit_result["content_hash"][:16] + "...",
+                                "status": "completed"
+                            })
+                        else:
+                            await websocket.send_json({
+                                "type": "audit",
+                                "status": "failed",
+                                "error": audit_result.get("error", "Unknown error")
+                            })
                     
     except WebSocketDisconnect:
         active_websockets.remove(websocket)

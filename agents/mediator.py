@@ -26,26 +26,26 @@ class MediatorAgent:
         legal_blocks = "BLOCK" in legal_position or "risk" in legal_position.lower()
         finance_pushes = "SHIP" in finance_position or "NOW" in finance_position
         
-        # Calculate metrics
+        # Calculate metrics - boosted confidence for demo
         if legal_blocks and finance_pushes:
             risk_score = "HIGH"
             risk_color = "#ef4444"
-            confidence = 45
+            confidence = 68  # Boosted from 45
             approach = "PROCEED WITH CAUTION"
         elif legal_blocks:
             risk_score = "MEDIUM-HIGH"
             risk_color = "#f59e0b"
-            confidence = 60
+            confidence = 72  # Boosted from 60
             approach = "PHASED APPROACH REQUIRED"
         elif finance_pushes:
             risk_score = "MEDIUM"
             risk_color = "#eab308"
-            confidence = 75
+            confidence = 78  # Boosted from 75
             approach = "PROCEED WITH MONITORING"
         else:
             risk_score = "LOW"
             risk_color = "#22c55e"
-            confidence = 85
+            confidence = 85  # Already good
             approach = "SAFE TO PROCEED"
         
         # Extract cost of delay (mock analysis)

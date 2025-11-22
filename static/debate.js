@@ -1,9 +1,9 @@
-// Debate examples
+// Debate examples - compelling scenarios for demo
 const examples = {
-    gdpr: "Should we launch our MVP in the EU without full GDPR compliance? We have a 3-month market window and $5M ARR potential. Competitors are also launching soon.",
-    hemp: "Should we transport 5,000 lbs of hemp biomass from Oregon to Florida through Idaho? The direct route saves 2 weeks and gets us a $50K bonus, but Idaho has strict laws.",
-    california: "Should we hire 10 engineers in California as contractors instead of employees? It saves $200K/year but there's AB5 misclassification risk.",
-    germany: "Should we open an office in Germany with 5 employees? There's a $20M market opportunity but complex labor laws and tax nexus issues."
+    gdpr: "Should we launch our MVP in the EU without full GDPR compliance? We have a 3-month market window and $5M ARR potential. Competitors are launching soon.",
+    california: "Can we classify our 10 California engineers as independent contractors instead of employees? It would save $700K annually in benefits and equity.",
+    ai_training: "Is it legal to use 2M customer support tickets to train our AI model without explicit consent? Our privacy policy mentions 'service improvement'.",
+    germany: "Should we open a German subsidiary now or wait for EU legal counsel? We have a client ready to sign a €500K contract but no local compliance."
 };
 
 let currentRoundNumber = 1;
@@ -17,17 +17,60 @@ function setExample(type) {
 
 function formatMessage(text) {
     // Convert markdown-style bold to HTML
-    return text
+    let formatted = text
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/•/g, '&bull;');
+    
+    // Highlight concession statements
+    formatted = formatted.replace(
+        /(🤝\s*\*\*I concede:?\*\*[^\n]*)/g,
+        '<span class="concession-highlight">$1</span>'
+    );
+    
+    // Also catch other concession patterns
+    formatted = formatted.replace(
+        /(I acknowledge|Fair point|You're right that)([^\n]*)/gi,
+        '<span class="concession-highlight">$1$2</span>'
+    );
+    
+    return formatted;
 }
 
-function showActiveSpeaker(name) {
+function showActiveSpeaker(name, role, round) {
     const speakerDiv = document.getElementById('activeSpeaker');
     const speakerName = document.getElementById('speakerName');
     
     speakerDiv.classList.add('visible');
-    speakerName.textContent = name + ' is responding...';
+    
+    // Customize message based on context
+    let message = '';
+    let dotColor = '';
+    
+    if (role === 'lawyer') {
+        dotColor = '#ef4444';
+        if (round === 'rebuttal') {
+            message = 'Paranoid Lawyer is analyzing Finance\'s argument...';
+        } else if (round === 'final') {
+            message = 'Paranoid Lawyer is preparing final position...';
+        } else {
+            message = 'Paranoid Lawyer is assessing legal risks...';
+        }
+    } else if (role === 'finance') {
+        dotColor = '#22c55e';
+        if (round === 'rebuttal') {
+            message = 'Greedy Finance is preparing rebuttal...';
+        } else if (round === 'final') {
+            message = 'Greedy Finance is calculating final ROI...';
+        } else {
+            message = 'Greedy Finance is analyzing opportunity...';
+        }
+    } else {
+        dotColor = '#6366f1';
+        message = 'The Mediator is synthesizing both positions...';
+    }
+    
+    // Add colored dot before message
+    speakerName.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; background: ${dotColor}; border-radius: 50%; margin-right: 8px; animation: pulse 1s infinite;"></span>${message}`;
     
     // Add speaking animation to the corresponding icon
     setTimeout(() => {
@@ -207,16 +250,19 @@ async function startDebate() {
             
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+                console.log('WebSocket message received:', data.type, data.agent || '');
                 
                 if (data.type === 'message') {
-                    // Show active speaker
-                    showActiveSpeaker(data.agent);
+                    // Show typing indicator immediately
+                    showActiveSpeaker(data.agent, data.role, data.round);
                     
-                    // Add message after a short delay
+                    // Add message after a short delay (message is already delayed on backend)
                     setTimeout(() => {
+                        console.log('Adding message from:', data.agent);
                         addMessage(data.agent, data.role, data.round, data.content, data.is_rebuttal);
-                        hideActiveSpeaker();
-                    }, 500);
+                        // Keep typing indicator visible briefly after message appears
+                        setTimeout(() => hideActiveSpeaker(), 300);
+                    }, 800);
                     
                 } else if (data.type === 'synthesis') {
                     // Update summary
@@ -224,9 +270,25 @@ async function startDebate() {
                         updateSummary(data.summary);
                     }
                     
+                } else if (data.type === 'audit_status') {
+                    // Show recording status
+                    const auditElement = document.getElementById('auditHash');
+                    auditElement.innerHTML = `<span style="color: #fbbf24;">⏳ ${data.message}</span>`;
+                    
                 } else if (data.type === 'audit') {
-                    // Update audit hash
-                    document.getElementById('auditHash').textContent = data.hash;
+                    // Update audit hash with link
+                    const auditElement = document.getElementById('auditHash');
+                    if (data.status === 'completed') {
+                        const shortHash = data.tx_hash.substring(0, 10) + '...' + data.tx_hash.substring(data.tx_hash.length - 8);
+                        auditElement.innerHTML = `
+                            <span style="color: #10b981;">✓ Recorded</span><br>
+                            <a href="${data.explorer_url}" target="_blank" style="color: #6366f1; text-decoration: none; font-family: monospace;">
+                                ${shortHash}
+                            </a>
+                        `;
+                    } else if (data.status === 'failed') {
+                        auditElement.innerHTML = `<span style="color: #ef4444;">❌ Recording failed</span>`;
+                    }
                     
                     // Debate complete
                     setTimeout(() => {

@@ -261,13 +261,18 @@ class DebateOrchestrator:
         previous_message_count = 0
         
         while context.current_state != DebateState.COMPLETE:
+            # Add typing delay BEFORE generating the message
+            # This simulates the agent "thinking"
+            if context.current_state != DebateState.INIT:
+                await asyncio.sleep(2.5)  # 2.5 seconds typing animation
+            
             context = await self._execute_state(context)
             
-            # Yield new messages
+            # Yield new messages immediately after generation
             for msg in context.messages[previous_message_count:]:
                 yield msg
-                # Add delay between messages for dramatic effect
-                await asyncio.sleep(0.5)
+                # Small delay after message appears before next typing starts
+                await asyncio.sleep(0.3)
             
             previous_message_count = len(context.messages)
             

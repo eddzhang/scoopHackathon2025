@@ -19,9 +19,12 @@ class ParanoidLawyerAgent:
         self.color = "#ef4444"  # Red
         self.system_prompt = """
         You are an ultra-paranoid legal counsel who sees catastrophic risk everywhere.
-        You cite specific laws, cases, and penalties. You catastrophize outcomes.
-        In rebuttals, you MUST directly quote and refute the other agent's claims.
-        Be aggressive but factual. Use phrases like "Finance claims X, but..."
+        CRITICAL: Keep responses concise - maximum 3-4 bullet points per turn.
+        Be punchy and direct. Every word should count.
+        Save your best arguments, don't list everything.
+        In rebuttals, directly quote and refute the other agent's claims.
+        Do not use dramatic headers like "DESTROYING" or "REALITY CHECK".
+        Keep headers simple: "REBUTTAL" or "COUNTER-ARGUMENT" is sufficient.
         """
         
     async def analyze(self, query: str) -> str:
@@ -117,38 +120,39 @@ class ParanoidLawyerAgent:
         return response
     
     async def opening_argument(self, query: str) -> str:
-        """Deliver opening argument (3-4 key points, concise)"""
+        """Deliver opening argument (3 key points MAX, punchy)"""
         await asyncio.sleep(0.3)
         
         query_lower = query.lower()
-        response = "🚨 **CRITICAL LEGAL RISKS IDENTIFIED**\n\n"
+        response = "🚨 **LEGAL POSITION**\n\n"
         
         # GDPR/EU specific
         if "eu" in query_lower or "gdpr" in query_lower:
-            response += "**My opening position:**\n"
-            response += "• **Article 83 violation:** Fines up to €20M or 4% global revenue\n"
-            response += "• **Meta precedent:** They paid $1.3B for similar violations (2023)\n"
-            response += "• **Personal liability:** Directors can be held criminally liable\n"
-            response += "• **Timeline reality:** Proper compliance takes 6-8 weeks minimum\n\n"
-            response += "❌ **Verdict: BLOCK** - This is legally radioactive."
+            response += "• **Meta paid $1.3B** for GDPR violations - you're next\n"
+            response += "• Fines up to **4% global revenue** or €20M\n"
+            response += "• Directors face **personal criminal liability**\n\n"
+            response += "❌ **BLOCK THIS** - 6 weeks minimum for compliance"
         
-        # Hemp transport
-        elif "hemp" in query_lower or "cannabis" in query_lower:
-            response += "**Federal/State conflict alert:**\n"
-            response += "• **Idaho Code § 37-2701:** Zero tolerance, immediate felony charges\n"
-            response += "• **Asset forfeiture:** Lose vehicles, funds, and freedom\n"
-            response += "• **Criminal conspiracy:** 5-10 years federal prison for drivers\n"
-            response += "• **Testing variance:** Legal hemp can test illegal at checkpoints\n\n"
-            response += "❌ **Verdict: ABORT** - This is a federal crime waiting to happen."
+        # AI training data
+        elif "ai" in query_lower and "training" in query_lower:
+            response += "• **Illinois BIPA:** $5,000 per violation = **$10B exposure**\n"
+            response += "• EU AI Act: Using data without consent = **criminal**\n"
+            response += "• Class action lawyers are circling this exact issue\n\n"
+            response += "❌ **ABORT** - This is the next Cambridge Analytica"
         
         # California contractors
         elif "california" in query_lower and "contractor" in query_lower:
-            response += "**AB5 misclassification disaster:**\n"
-            response += "• **Uber paid $100M** for the same violation you're proposing\n"
-            response += "• **Dynamex test:** You WILL fail part B (core business work)\n"
-            response += "• **Per-worker penalties:** $5,000-$25,000 EACH for willful violation\n"
-            response += "• **Personal liability:** Executives can be sued individually\n\n"
-            response += "❌ **Verdict: ILLEGAL** - California will destroy you for this."
+            response += "• **Uber paid $100M** for this exact violation\n"
+            response += "• AB5 Dynamex test: You **WILL fail** part B\n"
+            response += "• Penalties: **$25,000 per worker** + personal liability\n\n"
+            response += "❌ **ILLEGAL** - California will destroy you"
+        
+        # Germany office
+        elif "germany" in query_lower or "subsidiary" in query_lower:
+            response += "• Creates **permanent establishment** = 30% tax rate\n"
+            response += "• Can't fire German employees - **ever**\n"
+            response += "• Works councils can **veto** your decisions\n\n"
+            response += "❌ **WAIT** - You'll lose control of your company"
         
         else:
             response += self._generic_opening_risks(query)
@@ -156,66 +160,54 @@ class ParanoidLawyerAgent:
         return response
     
     async def rebut(self, query: str, opponent_argument: str, opponent: str) -> str:
-        """Directly rebut the opponent's arguments"""
+        """Directly rebut - 3 points MAX"""
         await asyncio.sleep(0.4)
         
-        response = "⚖️ **REBUTTAL TO FINANCE'S RECKLESS CLAIMS**\n\n"
+        response = "⚖️ **REBUTTAL**\n\n"
         
-        # Direct quotes and refutations
-        if "warnings first" in opponent_argument.lower() or "0.1%" in opponent_argument.lower():
-            response += "**Finance claims 'startups get warnings first' - COMPLETELY FALSE:**\n"
-            response += "• Article 83 allows **immediate maximum fines** for consent violations\n"
-            response += "• British Airways: €22M fine was their FIRST enforcement action\n"
-            response += "• That '0.1% enforcement' stat? It's actually **23% for tech companies**\n\n"
+        # Pick the strongest rebuttals only
+        if "warnings first" in opponent_argument.lower() or "enforcement" in opponent_argument.lower():
+            response += "• Finance says 'warnings first' - **British Airways got €22M instantly**\n"
+            response += "• That '0.1% enforcement'? It's **23% for tech companies**\n"
+            response += "• Meta's $1.3B fine came with **zero warning**\n\n"
         
-        if "everyone's doing it" in opponent_argument.lower() or "uber" in opponent_argument.lower():
-            response += "**Finance says 'Uber did it' - Yes, and they PAID FOR IT:**\n"
-            response += "• Uber's legal bills: **$500M and counting**\n"
-            response += "• They're BANNED in Germany, Hungary, Denmark\n"
-            response += "• Their executives faced **personal criminal charges**\n\n"
+        elif "everyone" in opponent_argument.lower() or "uber" in opponent_argument.lower():
+            response += "• 'Uber did it' - and paid **$500M in legal bills**\n"
+            response += "• They're **BANNED** in Germany, Hungary, Denmark\n"
+            response += "• Their executives got **criminal charges**\n\n"
         
-        if "500k" in opponent_argument.lower() or "opportunity" in opponent_argument.lower():
-            response += "**Finance's '$500K/month opportunity' ignores:**\n"
-            response += "• Reputation damage is **permanent** (ask Theranos)\n"
-            response += "• Legal defense costs: **$2M minimum**\n"
-            response += "• Criminal records: **Can't be monetized**\n\n"
+        else:
+            response += "• Finance ignores **$2M minimum legal defense costs**\n"
+            response += "• Reputation damage is **permanent** (see: Theranos)\n"
+            response += "• One violation triggers **cascading enforcement**\n\n"
         
-        response += "💀 The graveyard is full of startups that listened to Finance over Legal."
+        response += "💀 Don't become another cautionary tale."
         
         return response
     
     async def final_position(self, query: str, last_opponent_msg: str) -> str:
-        """Deliver final position with some concessions"""
+        """Final position - concise with concession"""
         await asyncio.sleep(0.3)
         
-        response = "⚖️ **FINAL LEGAL POSITION**\n\n"
+        response = "⚖️ **FINAL POSITION**\n\n"
         
-        # Minor concession
-        response += "**I concede:** The market opportunity is real and time-sensitive.\n\n"
+        # Concession
+        response += "🤝 **I concede:** The opportunity is real and time matters.\n\n"
         
-        # But double down on critical risks
-        response += "**But these risks are EXISTENTIAL:**\n"
-        response += "• Criminal liability cannot be 'fixed in production'\n"
-        response += "• Regulatory fines can exceed all revenue\n"
-        response += "• One violation can trigger cascading enforcement\n\n"
-        
-        # Compromise position
-        response += "**My compromise:** Proceed ONLY with:\n"
-        response += "• Written legal opinion clearing specific actions\n"
-        response += "• Insurance coverage for regulatory fines\n"
-        response += "• Phased rollout with legal checkpoints\n"
+        # Final stance
+        response += "**Non-negotiable requirements:**\n"
+        response += "• Legal opinion **before** launch\n"
+        response += "• Insurance for regulatory fines\n"
         response += "• Personal indemnification for executives\n\n"
         
-        response += "🛡️ **Protect the company, then grow it. Not the reverse.**"
+        response += "🛡️ **Protect first, profit second.**"
         
         return response
     
     def _generic_opening_risks(self, query: str) -> str:
         """Generic risk assessment for opening"""
-        return """**Compliance failures detected:**
-• Regulatory penalties: $1M-$10M range
-• Criminal exposure: Possible for executives
-• Precedent: Theranos executives got prison time
-• Recovery timeline: 2-5 years if caught
+        return """• **Theranos executives:** Currently in federal prison
+• Regulatory fines: **$10M+ likely**
+• Recovery time if caught: **2-5 years**
 
-❌ **Verdict: HALT** - Requires immediate legal review."""
+❌ **HALT** - This needs legal review."""
