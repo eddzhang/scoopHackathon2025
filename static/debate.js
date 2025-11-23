@@ -36,11 +36,20 @@ function formatMessage(text) {
     return formatted;
 }
 
-function showActiveSpeaker(name, role, round) {
-    const speakerDiv = document.getElementById('activeSpeaker');
+function showActiveSpeaker(agent, role, round) {
+    const speakerElement = document.getElementById('activeSpeaker');
     const speakerName = document.getElementById('speakerName');
     
-    speakerDiv.classList.add('visible');
+    let displayName = agent;
+    if (role === 'lawyer' || (agent && agent.includes('Legal'))) {
+        displayName = '🧠 Legal Counsel is analyzing...';
+    } else if (role === 'finance' || (agent && agent.includes('Business'))) {
+        displayName = '💭 Business Strategist is strategizing...';
+    } else if (role === 'mediator' || (agent && (agent.includes('Mediator') || agent.includes('Synthesizer')))) {
+        displayName = '⚖️ Strategic Synthesizer is deliberating...';
+    }
+    
+    speakerElement.classList.add('visible');
     
     // Customize message based on context
     let message = '';
@@ -49,11 +58,11 @@ function showActiveSpeaker(name, role, round) {
     if (role === 'lawyer') {
         dotColor = '#ef4444';
         if (round === 'rebuttal') {
-            message = 'Paranoid Lawyer is analyzing Finance\'s argument...';
+            message = 'Legal Counsel is analyzing Finance\'s argument...';
         } else if (round === 'final') {
-            message = 'Paranoid Lawyer is preparing final position...';
+            message = 'Legal Counsel is preparing final position...';
         } else {
-            message = 'Paranoid Lawyer is assessing legal risks...';
+            message = 'Legal Counsel is assessing legal risks...';
         }
     } else if (role === 'finance') {
         dotColor = '#22c55e';
@@ -149,19 +158,24 @@ function addMessage(agent, role, round, content, isRebuttal) {
     
     let icon, agentClass, displayName, color;
     if (role === 'lawyer') {
-        icon = '🚨';
+        icon = '⚖️';
         agentClass = 'lawyer';
-        displayName = 'Paranoid Lawyer';
+        displayName = 'Legal Counsel';
         color = '#ef4444';
     } else if (role === 'finance') {
-        icon = '💰';
+        icon = '📊';
         agentClass = 'finance';
-        displayName = 'Greedy Finance';
+        displayName = 'Business Strategist';
         color = '#22c55e';
+    } else if (role === 'mediator') {
+        icon = '🎯';
+        agentClass = 'mediator';
+        displayName = 'Strategic Synthesizer';
+        color = '#6366f1';
     } else {
         icon = '⚖️';
         agentClass = 'mediator';
-        displayName = 'The Mediator';
+        displayName = 'Strategic Synthesizer';
         color = '#6366f1';
     }
     
@@ -186,25 +200,46 @@ function addMessage(agent, role, round, content, isRebuttal) {
 }
 
 function updateSummary(summary) {
+    console.log('Updating Decision Summary with:', summary);
+    
     // Update risk score
     const riskElement = document.getElementById('riskScore');
-    riskElement.textContent = summary.risk_score || 'MEDIUM';
+    const riskScore = summary.risk_score || 'PENDING';
+    riskElement.textContent = riskScore;
     riskElement.className = 'risk-score';
-    if (summary.risk_score && summary.risk_score.includes('HIGH')) {
+    
+    // Apply color based on risk level
+    if (riskScore === 'HIGH') {
         riskElement.classList.add('risk-high');
-    } else if (summary.risk_score && summary.risk_score.includes('LOW')) {
+        riskElement.style.color = '#ef4444';
+    } else if (riskScore === 'LOW') {
         riskElement.classList.add('risk-low');
-    } else {
+        riskElement.style.color = '#22c55e';
+    } else if (riskScore === 'MEDIUM') {
         riskElement.classList.add('risk-medium');
+        riskElement.style.color = '#f59e0b';
+    } else {
+        riskElement.style.color = '#64748b';
     }
     
     // Update cost of delay
-    document.getElementById('costOfDelay').textContent = summary.cost_of_delay || '-';
+    const costElement = document.getElementById('costOfDelay');
+    costElement.textContent = summary.cost_of_delay || 'Analyzing...';
     
     // Update confidence
-    const confidence = summary.confidence || 0;
-    document.getElementById('confidenceValue').textContent = confidence + '%';
+    const confidence = typeof summary.confidence === 'number' ? summary.confidence : 0;
+    document.getElementById('confidenceValue').textContent = confidence > 0 ? confidence + '%' : '—';
     document.getElementById('confidenceFill').style.width = confidence + '%';
+    
+    // Update confidence bar color based on level
+    const fillElement = document.getElementById('confidenceFill');
+    if (confidence >= 80) {
+        fillElement.style.backgroundColor = '#22c55e';
+    } else if (confidence >= 60) {
+        fillElement.style.backgroundColor = '#f59e0b';
+    } else {
+        fillElement.style.backgroundColor = '#ef4444';
+    }
 }
 
 async function startDebate() {
@@ -228,12 +263,13 @@ async function startDebate() {
     document.getElementById('debateProgress').classList.add('active');
     document.getElementById('currentRound').textContent = '1';
     
-    // Reset summary
-    document.getElementById('riskScore').textContent = '-';
-    document.getElementById('costOfDelay').textContent = '-';
-    document.getElementById('confidenceValue').textContent = '-%';
+    // Reset summary to pending state
+    document.getElementById('riskScore').textContent = 'PENDING';
+    document.getElementById('riskScore').style.color = '#64748b';
+    document.getElementById('costOfDelay').textContent = 'Analyzing...';
+    document.getElementById('confidenceValue').textContent = '—';
     document.getElementById('confidenceFill').style.width = '0%';
-    document.getElementById('auditHash').textContent = 'Calculating...';
+    document.getElementById('auditHash').textContent = 'Awaiting decision...';
     
     // Try WebSocket first for real-time streaming
     const useWebSocket = true; // Can be made configurable
@@ -256,18 +292,20 @@ async function startDebate() {
                     // Show typing indicator immediately
                     showActiveSpeaker(data.agent, data.role, data.round);
                     
-                    // Add message after a short delay (message is already delayed on backend)
-                    setTimeout(() => {
-                        console.log('Adding message from:', data.agent);
-                        addMessage(data.agent, data.role, data.round, data.content, data.is_rebuttal);
-                        // Keep typing indicator visible briefly after message appears
-                        setTimeout(() => hideActiveSpeaker(), 300);
-                    }, 800);
+                    // Add message immediately since API calls provide natural timing
+                    console.log('Adding message from:', data.agent, 'role:', data.role);
+                    addMessage(data.agent, data.role, data.round, data.content, data.is_rebuttal);
+                    hideActiveSpeaker();
                     
                 } else if (data.type === 'synthesis') {
-                    // Update summary
+                    // Update summary with metadata from mediator
+                    console.log('Synthesis received:', data);
+                    
+                    // Use summary data which contains the parsed metadata
                     if (data.summary) {
                         updateSummary(data.summary);
+                    } else if (data.metadata) {
+                        updateSummary(data.metadata);
                     }
                     
                 } else if (data.type === 'audit_status') {
@@ -276,13 +314,16 @@ async function startDebate() {
                     auditElement.innerHTML = `<span style="color: #fbbf24;">⏳ ${data.message}</span>`;
                     
                 } else if (data.type === 'audit') {
-                    // Update audit hash with link
+                    // Update audit hash with clickable link
                     const auditElement = document.getElementById('auditHash');
                     if (data.status === 'completed') {
                         const shortHash = data.tx_hash.substring(0, 10) + '...' + data.tx_hash.substring(data.tx_hash.length - 8);
                         auditElement.innerHTML = `
-                            <span style="color: #10b981;">✓ Recorded</span><br>
-                            <a href="${data.explorer_url}" target="_blank" style="color: #6366f1; text-decoration: none; font-family: monospace;">
+                            <span style="color: #10b981; font-size: 12px;">✓ Recorded</span><br>
+                            <a href="${data.explorer_url}" target="_blank" 
+                               style="color: #6366f1; text-decoration: none; font-family: monospace; font-size: 13px;"
+                               onmouseover="this.style.textDecoration='underline'" 
+                               onmouseout="this.style.textDecoration='none'">
                                 ${shortHash}
                             </a>
                         `;

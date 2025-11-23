@@ -17,7 +17,15 @@ import hashlib
 
 # Import our debate orchestrator
 from debate_orchestrator import DebateOrchestrator, DebateMessage as OrchestratorMessage
+from debate_orchestrator_llm import DebateOrchestratorLLM, DebateMessage as LLMMessage
 from blockchain_audit import auditor
+
+import os
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # Pydantic models
@@ -57,8 +65,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global instances
-orchestrator = DebateOrchestrator()
+# Initialize the orchestrator
+# Check if we should use LLM version
+USE_LLM = os.getenv('USE_LLM', 'true').lower() == 'true'
+logger.info(f"USE_LLM setting: {USE_LLM}")
+
+if USE_LLM:
+    logger.info("Initializing LLM-powered orchestrator...")
+    try:
+        from debate_orchestrator_llm import orchestrator_llm
+        orchestrator = orchestrator_llm
+        logger.info("✅ Using LLM-powered orchestrator")
+    except Exception as e:
+        logger.error(f"Failed to initialize LLM orchestrator: {e}")
+        logger.info("Falling back to mock orchestrator")
+        orchestrator = DebateOrchestrator()
+else:
+    logger.info("Using mock orchestrator (USE_LLM=false)")
+    orchestrator = DebateOrchestrator()
 sessions = {}
 active_websockets = []
 
@@ -91,8 +115,10 @@ async def websocket_debate(websocket: WebSocket):
             session_id = str(uuid.uuid4())
             
             # Stream debate messages
+            logger.info(f"Starting debate stream for query: {query[:50]}...")
             async for item in orchestrator.stream_debate(query, session_id):
-                if isinstance(item, OrchestratorMessage):
+                # Handle both message types
+                if isinstance(item, (OrchestratorMessage, LLMMessage)):
                     # Convert to dict and send
                     message_data = {
                         "type": "message",
@@ -109,20 +135,26 @@ async def websocket_debate(websocket: WebSocket):
                     context = item
                     synthesis = context.synthesis
                     
-                    # Send synthesis
+                    # Send synthesis with metadata
                     if synthesis:
-                        # Create summary structure from synthesis data
+                        # Extract metadata from synthesis
+                        metadata = synthesis.get("metadata", {})
+                        
+                        # Create summary structure from metadata
                         summary_data = {
-                            "risk_score": synthesis.get("risk_score", "UNKNOWN"),
-                            "risk_color": synthesis.get("risk_color", "#64748b"),
-                            "cost_of_delay": synthesis.get("cost_of_delay", "Unknown"),
-                            "confidence": synthesis.get("confidence", 0),
-                            "approach": synthesis.get("approach", "Needs Analysis")
+                            "risk_score": metadata.get("risk_score", "UNKNOWN"),
+                            "risk_color": metadata.get("risk_color", "#64748b"),
+                            "cost_of_delay": metadata.get("cost_of_delay", "Unknown"),
+                            "confidence": metadata.get("confidence", 0),
+                            "approach": metadata.get("approach", "Needs Analysis")
                         }
+                        
+                        logger.info(f"Sending synthesis metadata: {summary_data}")
                         
                         await websocket.send_json({
                             "type": "synthesis",
-                            "summary": summary_data
+                            "summary": summary_data,
+                            "metadata": metadata
                         })
                         
                         # Record to blockchain
